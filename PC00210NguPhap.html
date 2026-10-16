@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BÀI 10 – NGỮ PHÁP - Flashcard</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; font-family:Arial,"Microsoft YaHei",sans-serif;
+  background:#fdfbf7;
+  display:flex; justify-content:center; color:#202124;
+}
+.app{width:min(860px,96vw); padding:30px 0 40px}
+h1{text-align:center;margin:0 0 15px;font-size:38.4px; font-weight: bold;}
+.progress{text-align:center;font-size:21.6px;color:#444;margin-bottom:20px; font-weight: bold;}
+.card-wrap{perspective:1200px; cursor:pointer}
+.card{
+  width:100%; height:592px; position:relative; transform-style:preserve-3d;
+  transition:transform .55s ease;
+}
+.card.flipped{transform:rotateY(180deg)}
+.face{
+  position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  border-radius:24px; background:white; box-shadow:0 15px 45px rgba(0,0,0,.15);
+  display:flex; flex-direction:column; padding:36px; border:3px solid #eee; overflow-y:auto;
+}
+.front{justify-content:flex-start; align-items:flex-start; text-align:left}
+.back{transform:rotateY(180deg); text-align:left; align-items:flex-start; justify-content:flex-start; padding-top:40px;}
+
+.hl{color: #7c2d12; font-weight: bold; background-color: #fef08a; padding: 2px 6px; border-radius: 4px; border: 1px solid #eab308;}
+.hl-blue { color: #ffffff; font-weight: bold; background-color: #2563eb; padding: 2px 6px; border-radius: 4px; }
+.hl-red { color: #dc2626; font-weight: bold; }
+
+/* Pinyin mặt trước: căn giữa */
+.pinyin{
+  font-size:1.68em;
+  color:#666666;
+  margin-bottom:10px;
+  font-weight:bold;
+  text-align:center;
+  width:100%;
+}
+
+.zh-front { font-size: 2.16em; font-weight: bold; margin-bottom: 6px; line-height: 1.3; color: #dc2626; text-align: center; width: 100%; }
+
+/* Mặt sau */
+.zh-back { color: #2563eb; font-weight: bold; font-size: 1.74em; line-height: 1.2; display: inline-block; margin-top: 8px; margin-bottom: 2px; }
+.pinyin-back { color: #666666; font-weight: bold; font-size: 1.2em; display: block; margin: 2px 0; }
+.vi-back { font-size: 1.2em; color: #333; display: block; margin-bottom: 10px; }
+
+.desc-front { font-size: 1.38em; color: #333; margin: 8px 0; text-align: left; width: 100%; line-height: 1.4; }
+.desc{font-size: 1.38em; color: #333; margin: 0; text-align: left; width: 100%; line-height: 1.4;}
+
+.controls{display:flex;gap:20px;justify-content:center;margin-top:30px}
+button{
+  border:0;border-radius:20px;padding:20px 35px;font-size:26.4px;
+  cursor:pointer;background:#e9eef7;color:#233044; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,.1);
+}
+button.primary{background:#2563eb;color:white}
+</style>
+</head>
+
+<body>
+<div class="app">
+  <h1 id="title">BÀI 10 – NGỮ PHÁP</h1>
+  <div class="progress" id="progress"></div>
+
+  <div class="card-wrap" id="cardWrap" onclick="flipCard()">
+    <div class="card" id="card">
+      <div class="face front" id="frontFace"></div>
+      <div class="face back" id="backFace"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="event.stopPropagation();prevCard()">← TRƯỚC</button>
+    <button class="primary" onclick="event.stopPropagation();flipCard()">LẬT THẺ</button>
+    <button onclick="event.stopPropagation();nextCard()">TIẾP →</button>
+  </div>
+</div>
+
+<script>
+const cards = [
+  {
+    f: "<div class='zh-front'>NGAY CẢ… CŨNG</div>" +
+       "<div class='zh-front'><span style='background-color: #2563eb; color: #ffffff; padding: 2px 6px; border-radius: 4px;'>连……也/都…</span></div>" +
+       "<div class='pinyin'>lián ... yě / dōu ...</div>" +
+       "<div class='desc-front'>" +
+       "Cấu trúc nhấn mạnh. Đặt 连 trước thành phần cần nhấn mạnh, kết hợp với 也 hoặc 都. Dùng để diễn tả ý: ngay cả việc nhỏ nhất, đơn giản nhất cũng không làm được, hoặc ngay cả người/vật không ngờ tới cũng như vậy." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>连鞋带都要我帮你系。</span><br><span class='pinyin-back'>Lián xiédài dōu yào wǒ bāng nǐ jì.</span><span class='vi-back'>(Ngay cả dây giày cũng phải để tôi buộc giúp anh.)</span>" +
+       "<span class='zh-back'>他今天早晨起晚了，连早饭都没吃就走了。</span><br><span class='pinyin-back'>Tā jīntiān zǎochén qǐ wǎn le, lián zǎofàn dōu méi chī jiù zǒu le.</span><span class='vi-back'>(Anh ấy sáng nay dậy muộn, ngay cả bữa sáng cũng không ăn đã đi rồi.)</span>" +
+       "<span class='zh-back'>他的汉字写得太差了，连小孩儿的字都不如。</span><br><span class='pinyin-back'>Tā de Hànzì xiě de tài chà le, lián xiǎoháir de zì dōu bù rú.</span><span class='vi-back'>(Chữ Hán của anh ấy viết quá kém, ngay cả chữ của trẻ con cũng không bằng.)</span>" +
+       "<span class='zh-back'>这个名字我连听也没听说过，当然不认识了。</span><br><span class='pinyin-back'>Zhège míngzi wǒ lián tīng yě méi tīngshuō guò, dāngrán bú rènshi le.</span><span class='vi-back'>(Cái tên này tôi ngay cả nghe cũng chưa từng nghe qua, đương nhiên là không biết rồi.)</span>" +
+       "<span class='zh-back'>他连我心里想什么都能猜到。</span><br><span class='pinyin-back'>Tā lián wǒ xīnli xiǎng shénme dōu néng cāi dào.</span><span class='vi-back'>(Anh ấy ngay cả trong lòng tôi nghĩ gì cũng đoán được.)</span>" +
+       "<span class='zh-back'>这孩子很害羞，见了生人连一句话也不敢说。</span><br><span class='pinyin-back'>Zhè háizi hěn hàixiū, jiàn le shēngrén lián yí jù huà yě bù gǎn shuō.</span><span class='vi-back'>(Đứa trẻ này rất nhút nhát, gặp người lạ ngay cả một câu cũng không dám nói.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>AI / CÁI GÌ / Ở ĐÂU / THẾ NÀO… CŨNG</div>" +
+       "<div class='zh-front'><span style='background-color: #2563eb; color: #ffffff; padding: 2px 6px; border-radius: 4px;'>谁/哪儿/什么/怎么/…… + 也/都…</span></div>" +
+       "<div class='pinyin'>shuí / nǎr / shénme / zěnme + yě / dōu ...</div>" +
+       "<div class='desc-front'>" +
+       "Cách nói nhấn mạnh. Các đại từ nghi vấn biểu thị tất cả mọi người, mọi nơi, mọi vật, mọi cách trong một phạm vi nhất định. Câu khẳng định thường dùng 都; câu phủ định dùng 都 hoặc 也 đều được." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>可像我这样的人怎么减肥都没用。</span><br><span class='pinyin-back'>Kě xiàng wǒ zhèyàng de rén zěnme jiǎnféi dōu méiyòng.</span><span class='vi-back'>(Nhưng người như tôi dù có giảm cân thế nào cũng vô ích.)</span>" +
+       "<span class='zh-back'>爸爸妈妈说什么他都不听。</span><br><span class='pinyin-back'>Bàba māma shuō shénme tā dōu bù tīng.</span><span class='vi-back'>(Bố mẹ nói gì cậu ấy cũng không nghe.)</span>" +
+       "<span class='zh-back'>我们班谁都没去过洛阳。</span><br><span class='pinyin-back'>Wǒmen bān shuí dōu méi qù guò Luòyáng.</span><span class='vi-back'>(Lớp chúng tôi không ai từng đi Lạc Dương cả.)</span>" +
+       "<span class='zh-back'>这种衣服哪儿都有卖的。</span><br><span class='pinyin-back'>Zhè zhǒng yīfu nǎr dōu yǒu mài de.</span><span class='vi-back'>(Loại quần áo này ở đâu cũng có bán.)</span>" +
+       "<span class='zh-back'>他一天到晚看电视，什么节目都看。</span><br><span class='pinyin-back'>Tā yì tiān dào wǎn kàn diànshì, shénme jiémù dōu kàn.</span><span class='vi-back'>(Anh ấy từ sáng đến tối xem tivi, chương trình gì cũng xem.)</span>" +
+       "<span class='zh-back'>这个字太复杂了，我怎么也写不对。</span><br><span class='pinyin-back'>Zhège zì tài fùzá le, wǒ zěnme yě xiě bú duì.</span><span class='vi-back'>(Chữ này quá phức tạp, tôi thế nào cũng viết không đúng.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>TUYỆT ĐỐI</div>" +
+       "<div class='zh-front'><span style='background-color: #2563eb; color: #ffffff; padding: 2px 6px; border-radius: 4px;'>绝对</span></div>" +
+       "<div class='pinyin'>juéduì</div>" +
+       "<div class='desc-front'>" +
+       "1. Dùng làm tính từ: biểu thị tình huống trong bất kỳ điều kiện/lúc nào cũng đều như vậy.<br>" +
+       "2. Dùng làm phó từ: biểu thị ý hoàn toàn, nhất định." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>世界上没有绝对的好人。</span><br><span class='pinyin-back'>Shìjiè shàng méiyǒu juéduì de hǎorén.</span><span class='vi-back'>(Trên thế giới không có người tốt tuyệt đối.)</span>" +
+       "<span class='zh-back'>你对他的看法太绝对了，他不一定那么坏。</span><br><span class='pinyin-back'>Nǐ duì tā de kànfǎ tài juéduì le, tā bú yídìng nème huài.</span><span class='vi-back'>(Cách nhìn của bạn về anh ấy quá tuyệt đối rồi, anh ấy không nhất định xấu như vậy.)</span>" +
+       "<span class='zh-back'>考试的时候要绝对遵守考场纪律。</span><br><span class='pinyin-back'>Kǎoshì de shíhou yào juéduì zūnshǒu kǎochǎng jìlǜ.</span><span class='vi-back'>(Khi thi phải tuyệt đối tuân thủ kỷ luật phòng thi.)</span>" +
+       "<span class='zh-back'>我做的这个菜绝对会受大家的欢迎。</span><br><span class='pinyin-back'>Wǒ zuò de zhège cài juéduì huì shòu dàjiā de huānyíng.</span><span class='vi-back'>(Món ăn tôi làm này tuyệt đối sẽ được mọi người hoan nghênh.)</span>" +
+       "<span class='zh-back'>爱珍的字我认识，这绝对不是她写的。</span><br><span class='pinyin-back'>Àizhēn de zì wǒ rènshi, zhè juéduì bú shì tā xiě de.</span><span class='vi-back'>(Chữ của Ái Trân tôi biết, cái này tuyệt đối không phải do cô ấy viết.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>MỘT… HƠN… (CÀNG… CÀNG…)</div>" +
+       "<div class='zh-front'><span style='background-color: #2563eb; color: #ffffff; padding: 2px 6px; border-radius: 4px;'>一 + Lượng từ + 比 + 一 + Lượng từ</span></div>" +
+       "<div class='pinyin'>yī + liàngcí + bǐ + yī + liàngcí</div>" +
+       "<div class='desc-front'>" +
+       "1. Diễn đạt mức độ không ngừng tăng lên.<br>" +
+       "2. Khi thành phần so sánh không phải từ chỉ thời gian, cấu trúc biểu thị tất cả đều có một đặc điểm nào đó, mang ý nhấn mạnh." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>为什么现在的胖子一天比一天多？</span><br><span class='pinyin-back'>Wèishénme xiànzài de pàngzi yì tiān bǐ yì tiān duō?</span><span class='vi-back'>(Tại sao người béo bây giờ ngày một nhiều hơn?)</span>" +
+       "<span class='zh-back'>他的视力也一天比一天差。</span><br><span class='pinyin-back'>Tā de shìlì yě yì tiān bǐ yì tiān chà.</span><span class='vi-back'>(Thị lực của cậu ấy cũng ngày một kém đi.)</span>" +
+       "<span class='zh-back'>北京的发展一年比一年快。</span><br><span class='pinyin-back'>Běijīng de fzhǎn yì nián bǐ yì nián kuài.</span><span class='vi-back'>(Sự phát triển của Bắc Kinh năm một nhanh hơn.)</span>" +
+       "<span class='zh-back'>人老了，身体一天比一天差。</span><br><span class='pinyin-back'>Rén lǎo le, shēntǐ yì tiān bǐ yì tiān chà.</span><span class='vi-back'>(Người già rồi, sức khỏe ngày một kém đi.)</span>" +
+       "<span class='zh-back'>幼儿园里的孩子一个比一个可爱。</span><br><span class='pinyin-back'>Yòu'éryuán lǐ de háizi yí gè bǐ yí gè kě'ài.</span><span class='vi-back'>(Trẻ con trong nhà trẻ đứa nào cũng đáng yêu.)</span>" +
+       "<span class='zh-back'>这几年来中国学汉语的外国人一年比一年多。</span><br><span class='pinyin-back'>Zhè jǐ nián lái Zhōngguó xué Hànyǔ de wàiguórén yì nián bǐ yì nián duō.</span><span class='vi-back'>(Những năm gần đây người nước ngoài đến Trung Quốc học tiếng Hán ngày một nhiều hơn.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>ĐÃ… THÌ…</div>" +
+       "<div class='zh-front'><span style='background-color: #2563eb; color: #ffffff; padding: 2px 6px; border-radius: 4px;'>既然…，那就…</span></div>" +
+       "<div class='pinyin'>jìrán ..., nà jiù ...</div>" +
+       "<div class='desc-front'>" +
+       "Dùng 既然 đưa ra tình huống đã trở thành sự thật hoặc được khẳng định, phía sau đưa ra kết luận dựa vào tình huống đó.<br>" +
+       "Phân biệt với 因为: 既然 nhấn mạnh kết luận phía sau (chủ quan người nói), 因为 giải thích nguyên nhân khách quan." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>既然吃药也没用，那就算了。</span><br><span class='pinyin-back'>Jìrán chī yào yě méiyòng, nà jiù suàn le.</span><span class='vi-back'>(Đã uống thuốc cũng vô ích, vậy thì thôi bỏ đi.)</span>" +
+       "<span class='zh-back'>既然你一定要去，我也不说什么了，不过你千万要小心。</span><br><span class='pinyin-back'>Jìrán nǐ yí dìng yào qù, wǒ yě bù shuō shénme le, búguò nǐ qiānwàn yào xiǎoxīn.</span><span class='vi-back'>(Đã nhất định em phải đi, tôi cũng không nói gì nữa, nhưng em nhất định phải cẩn thận.)</span>" +
+       "<span class='zh-back'>你既然同意我们的意见，就跟我们一起干吧。</span><br><span class='pinyin-back'>Nǐ jìrán tóngyì wǒmen de yìjiàn, jiù gēn wǒmen yìqǐ gàn ba.</span><span class='vi-back'>(Anh đã đồng ý với ý kiến của chúng tôi, thì cùng làm với chúng tôi đi.)</span>" +
+       "<span class='zh-back'>事情既然已经发生了，后悔有什么用呢？</span><br><span class='pinyin-back'>Shìqing jìrán yǐjīng fāshēng le, hòuhuǐ yǒu shénme yòng ne?</span><span class='vi-back'>(Việc đã xảy ra rồi, hối hận có ích gì đâu?)</span>" +
+       "<span class='zh-back'>既然你让我负责这件事，就应该相信我。</span><br><span class='pinyin-back'>Jìrán nǐ ràng wǒ fùzé zhè jiàn shì, jiù yīnggāi xiāngxìn wǒ.</span><span class='vi-back'>(Đã để tôi phụ trách việc này, thì nên tin tưởng tôi.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>CHẲNG MAY, LỠ NHƯ</div>" +
+       "<div class='zh-front'><span style='background-color: #2563eb; color: #ffffff; padding: 2px 6px; border-radius: 4px;'>万一</span></div>" +
+       "<div class='pinyin'>wànyī</div>" +
+       "<div class='desc-front'>" +
+       "Cách giả định, cho biết khả năng xảy ra một tình huống rất nhỏ nhưng lo lắng nó sẽ xảy ra. Thường dùng cho những việc không mong muốn." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>万一让我爱人知道了，就麻烦了。</span><br><span class='pinyin-back'>Wànyī ràng wǒ àiren zhīdào le, jiù máfan le.</span><span class='vi-back'>(Lỡ để vợ tôi biết được, thì rắc rối lắm.)</span>" +
+       "<span class='zh-back'>我要多带几件衣服，万一天气变冷，不会冻着。</span><br><span class='pinyin-back'>Wǒ yào duō dài jǐ jiàn yīfu, wànyī tiānqì biàn lěng, bú huì dòngzhe.</span><span class='vi-back'>(Tôi phải mang thêm mấy bộ quần áo, lỡ trời trở lạnh thì không bị lạnh.)</span>" +
+       "<span class='zh-back'>这工作小黄也会，万一老王来不了，就让小黄干。</span><br><span class='pinyin-back'>Zhè gōngzuò Xiǎo Huáng yě huì, wànyī Lǎo Wáng lái bù liǎo, jiù ràng Xiǎo Huáng gàn.</span><span class='vi-back'>(Công việc này Tiểu Hoàng cũng biết làm, lỡ lão Vương không đến được thì để Tiểu Hoàng làm.)</span>" +
+       "<span class='zh-back'>去买飞机票以前最好先打电话问问，万一票卖完了呢？</span><br><span class='pinyin-back'>Qù mǎi fēijīpiào yǐqián zuì hǎo xiān dǎ diànhuà wènwen, wànyī piào mài wán le ne?</span><span class='vi-back'>(Trước khi đi mua vé máy bay tốt nhất nên gọi điện hỏi trước, lỡ vé bán hết rồi thì sao?)</span>" +
+       "<span class='zh-back'>你到北京以后，万一找不到住的地方，可以先住在我家。</span><br><span class='pinyin-back'>Nǐ dào Běijīng yǐhòu, wànyī zhǎo bú dào zhù de dìfang, kěyǐ xiān zhù zài wǒ jiā.</span><span class='vi-back'>(Sau khi em đến Bắc Kinh, lỡ không tìm được chỗ ở, thì có thể ở nhà tôi trước.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>HỄ… LÀ…</div>" +
+       "<div class='zh-front'><span style='background-color: #2563eb; color: #ffffff; padding: 2px 6px; border-radius: 4px;'>一 + Động từ + 就是 + Số lượng</span></div>" +
+       "<div class='pinyin'>yī + dòngtí + jiù shì + shùliàng</div>" +
+       "<div class='desc-front'>" +
+       "Cho biết mỗi lần làm việc gì đó đều đạt đến một số lượng lớn (theo đánh giá của người nói)." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>一玩儿就是好几个小时。</span><br><span class='pinyin-back'>Yì wánr jiù shì hǎo jǐ gè xiǎoshí.</span><span class='vi-back'>(Chơi một lần là mấy tiếng đồng hồ.)</span>" +
+       "<span class='zh-back'>她爱人经常去外地办事，一去就是一两个月。</span><br><span class='pinyin-back'>Tā àiren jīngcháng qù wàidì bànshì, yí qù jiù shì yì liǎng gè yuè.</span><span class='vi-back'>(Chồng cô ấy thường đi công tác nơi khác, đi một lần là một hai tháng.)</span>" +
+       "<span class='zh-back'>爱珍特别喜欢吃巧克力，一吃就是十几块。</span><br><span class='pinyin-back'>Àizhēn tèbié xǐhuan chī qiǎokèlì, yì chī jiù shì shí jǐ kuài.</span><span class='vi-back'>(Ái Trân đặc biệt thích ăn sô-cô-la, ăn một lần là mười mấy miếng.)</span>" +
+       "<span class='zh-back'>望月学习很努力，一学就学半天。</span><br><span class='pinyin-back'>Wàngyuè xuéxí hěn nǔlì, yì xué jiù xué bàntiān.</span><span class='vi-back'>(Vọng Nguyệt học rất chăm chỉ, học một lần là học nửa ngày.)</span>" +
+       "<span class='zh-back'>老董酒量大极了，喝啤酒一喝就是十几瓶。</span><br><span class='pinyin-back'>Lǎo Dǒng jiǔliàng dà jí le, hē píjiǔ yì hē jiù shì shí jǐ píng.</span><span class='vi-back'>(Lão Đổng tửu lượng rất lớn, uống bia một lần là mười mấy chai.)</span>" +
+       "</div>"
+  }
+];
+
+let idx = 0;
+
+function render() {
+  document.getElementById('frontFace').innerHTML = cards[idx].f;
+  document.getElementById('backFace').innerHTML = cards[idx].b;
+  document.getElementById('progress').innerText = `Thẻ ${idx + 1} / ${cards.length}`;
+}
+
+function flipCard() {
+  document.getElementById('card').classList.toggle('flipped');
+}
+
+function nextCard() {
+  idx = (idx + 1) % cards.length;
+  document.getElementById('card').classList.remove('flipped');
+  render();
+}
+
+function prevCard() {
+  idx = (idx - 1 + cards.length) % cards.length;
+  document.getElementById('card').classList.remove('flipped');
+  render();
+}
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+    nextCard();
+    event.preventDefault();
+  } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+    prevCard();
+    event.preventDefault();
+  } else if (event.key === ' ' || event.key === 'Enter') {
+    flipCard();
+    event.preventDefault();
+  }
+});
+
+render();
+</script>
+</body>
+</html>

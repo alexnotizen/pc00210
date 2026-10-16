@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BÀI 10 - TỪ MỚI</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; font-family:Arial,"Microsoft YaHei",sans-serif;
+  background:linear-gradient(135deg,#eef4ff,#f9fbff);
+  display:flex; justify-content:center; color:#202124;
+}
+.app{width:min(720px,94vw); padding:28px 0 36px}
+h1{text-align:center;margin:0 0 8px;font-size:28px}
+.subtitle{text-align:center;color:#666;margin-bottom:18px}
+.progress{text-align:center;font-size:15px;color:#666;margin-bottom:14px}
+.card-wrap{perspective:1200px; cursor:pointer}
+.card{
+  width:100%; height:489px; position:relative; transform-style:preserve-3d;
+  transition:transform .55s ease;
+}
+.card.flipped{transform:rotateY(180deg)}
+.face{
+  position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  border-radius:24px; background:white; box-shadow:0 12px 35px rgba(30,60,100,.15);
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  padding:30px; border:1px solid #e6eaf0; text-align:center;
+}
+.zh{
+  color: #e53e3e;
+  font-weight: bold;
+}
+.front .han{font-size:168px; line-height: 1.2;}
+.front .hint{margin-top:28px;color:#999;font-size:28px}
+
+.back{transform:rotateY(180deg); justify-content:flex-start; padding-top:20px; overflow-y:auto;}
+.back .han{font-size:108px; margin-bottom:4px; line-height: 1.2;}
+.pinyin{font-size:65px;font-weight:700;color:#2b6cb0;margin-bottom:4px}
+.pos{font-size:29px;font-style:italic;color:#718096;margin-bottom:6px}
+.meaning{font-size:36px;color:#2d3748;font-weight:500;margin-bottom:10px}
+.note{font-size:24px;color:#4a5568;background:#f7fafc;padding:10px 14px;border-radius:12px;border-left:4px solid #cbd5e0;max-width:90%;margin:0 auto;line-height:1.4;text-align:left;}
+.note i{font-style:italic;}
+.controls{display:flex;gap:12px;justify-content:center;margin-top:22px}
+button{
+  border:0;border-radius:14px;padding:13px 20px;font-size:16px;
+  cursor:pointer;background:#e9eef7;color:#233044;
+}
+button.primary{background:#2563eb;color:white}
+button:hover{filter:brightness(.97)}
+.extra{display:flex;justify-content:center;gap:10px;margin-top:14px}
+.speak{background:#fff4d6}
+.shuffle{background:#e9f8ef}
+@media(max-width:520px){
+ .app{padding-top:20px}.card{height:435px}
+ .front .han{font-size:108px}
+ .front .hint{font-size:22px}
+ .back .han{font-size:72px}
+ .pinyin{font-size:43px}
+ .pos{font-size:24px}
+ .meaning{font-size:29px}
+ .note{font-size:19px; padding:8px 10px;}
+ .controls button{padding:12px 14px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🇨🇳 BÀI 10 - TỪ MỚI</h1>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="card-wrap" id="cardWrap" onclick="flipCard()">
+    <div class="card" id="card">
+      <div class="face front">
+        <div class="han zh" id="frontHan"></div>
+      </div>
+      <div class="face back">
+        <div class="han zh" id="backHan"></div>
+        <div class="pinyin" id="pinyin"></div>
+        <div class="pos" id="pos"></div>
+        <div class="meaning" id="meaning"></div>
+        <div class="note" id="note" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="event.stopPropagation();prevCard()">← Trước</button>
+    <button class="primary" onclick="event.stopPropagation();flipCard()">Lật thẻ</button>
+    <button onclick="event.stopPropagation();nextCard()">Tiếp →</button>
+  </div>
+  <div class="extra">
+    <button class="speak" onclick="event.stopPropagation();speak()">🔊 Nghe phát âm</button>
+    <button class="shuffle" onclick="event.stopPropagation();shuffleCards()">🔀 Trộn từ</button>
+  </div>
+</div>
+
+<script>
+const originalCards = [
+  { "han": "鞋带", "pinyin": "xiédài", "pos": "danh từ", "meaning": "dây giày", "note": "" },
+  { "han": "系", "pinyin": "jì", "pos": "động từ", "meaning": "buộc", "note": "" },
+  { "han": "无论如何", "pinyin": "wúlùn rúhé", "pos": "", "meaning": "dù thế nào đi nữa", "note": "" },
+  { "han": "得", "pinyin": "děi", "pos": "trợ động từ", "meaning": "phải", "note": "" },
+  { "han": "减肥", "pinyin": "jiǎn féi", "pos": "", "meaning": "giảm cân", "note": "" },
+  { "han": "得", "pinyin": "dé", "pos": "động từ", "meaning": "mắc, bị", "note": "" },
+  { "han": "广告", "pinyin": "guǎnggào", "pos": "danh từ", "meaning": "quảng cáo", "note": "" },
+  { "han": "产品", "pinyin": "chǎnpǐn", "pos": "danh từ", "meaning": "sản phẩm", "note": "" },
+  { "han": "绝对", "pinyin": "juéduì", "pos": "tính từ, phó từ", "meaning": "tuyệt đối", "note": "" },
+  { "han": "既然", "pinyin": "jìrán", "pos": "liên từ", "meaning": "đã... thì", "note": "" },
+  { "han": "算了", "pinyin": "suàn le", "pos": "", "meaning": "thôi bỏ đi", "note": "" },
+  { "han": "许", "pinyin": "xǔ", "pos": "động từ", "meaning": "cho phép", "note": "" },
+  { "han": "电梯", "pinyin": "diàntī", "pos": "danh từ", "meaning": "thang máy", "note": "" },
+  { "han": "支", "pinyin": "zhī", "pos": "lượng từ", "meaning": "điếu, cây, chiếc", "note": "" },
+  { "han": "万一", "pinyin": "wànyī", "pos": "phó từ", "meaning": "lỡ như, nhỡ đâu", "note": "" },
+  { "han": "管", "pinyin": "guǎn", "pos": "động từ", "meaning": "quản, để ý", "note": "" },
+  { "han": "严", "pinyin": "yán", "pos": "tính từ", "meaning": "nghiêm", "note": "" },
+  { "han": "肯定", "pinyin": "kěndìng", "pos": "tính từ, phó từ", "meaning": "chắc chắn", "note": "" },
+  { "han": "本来", "pinyin": "běnlái", "pos": "phó từ", "meaning": "vốn dĩ", "note": "" },
+  { "han": "游戏", "pinyin": "yóuxì", "pos": "danh từ", "meaning": "trò chơi", "note": "" },
+  { "han": "成绩", "pinyin": "chéngjì", "pos": "danh từ", "meaning": "thành tích", "note": "" },
+  { "han": "下降", "pinyin": "xiàjiàng", "pos": "động từ", "meaning": "giảm xuống", "note": "" },
+  { "han": "视力", "pinyin": "shìlì", "pos": "danh từ", "meaning": "thị lực", "note": "" },
+  { "han": "老董", "pinyin": "Lǎo Dǒng", "pos": "danh từ riêng", "meaning": "Lão Đổng", "note": "" },
+  { "han": "老王", "pinyin": "Lǎo Wáng", "pos": "danh từ riêng", "meaning": "Lão Vương", "note": "" },
+  { "han": "妻管严", "pinyin": "Qīguǎnyán", "pos": "danh từ riêng", "meaning": "Sợ vợ", "note": "" },
+  { "han": "小明", "pinyin": "Xiǎo Míng", "pos": "danh từ riêng", "meaning": "Tiểu Minh", "note": "" }
+];
+
+let cards = [...originalCards];
+let index = 0;
+let flipped = false;
+
+function render(){
+  const c = cards[index];
+  document.getElementById('frontHan').textContent = c.han;
+  document.getElementById('backHan').textContent = c.han;
+  document.getElementById('pinyin').textContent = c.pinyin;
+  document.getElementById('pos').textContent = c.pos;
+  document.getElementById('meaning').innerHTML = c.meaning;
+  
+  const noteEl = document.getElementById('note');
+  if(c.note && c.note.trim() !== ""){
+    noteEl.innerHTML = c.note;
+    noteEl.style.display = "block";
+  } else {
+    noteEl.style.display = "none";
+  }
+
+  document.getElementById('progress').textContent = `Từ ${index+1} / ${cards.length}`;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+}
+
+function flipCard(){
+  flipped = !flipped;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+}
+
+function nextCard(){
+  index = (index + 1) % cards.length;
+  flipped = false; render();
+}
+
+function prevCard(){
+  index = (index - 1 + cards.length) % cards.length;
+  flipped = false; render();
+}
+
+function shuffleCards(){
+  for(let i=cards.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [cards[i],cards[j]]=[cards[j],cards[i]];
+  }
+  index=0; flipped=false; render();
+}
+
+function speak(){
+  const text=cards[index].han;
+  if('speechSynthesis' in window){
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='zh-CN'; u.rate=.75;
+    speechSynthesis.speak(u);
+  }else{
+    alert('Trình duyệt của bạn không hỗ trợ phát âm.');
+  }
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight') nextCard();
+  else if(e.key==='ArrowLeft') prevCard();
+  else if(e.key===' ' || e.key==='Enter'){
+    e.preventDefault();
+    flipCard();
+  }
+});
+
+render();
+</script>
+</body>
+</html>

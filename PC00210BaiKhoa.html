@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BÀI 10 - BÀI KHÓA</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; font-family:Arial,"Microsoft YaHei",sans-serif;
+  background:linear-gradient(135deg,#eef4ff,#f9fbff);
+  display:flex; justify-content:center; color:#202124;
+}
+.app{width:min(900px,96vw); padding:20px 0 30px}
+h1{text-align:center;margin:0 0 6px;font-size:32px}
+.subtitle{text-align:center;color:#666;margin-bottom:14px;font-size:18px}
+.progress{text-align:center;font-size:18px;color:#666;margin-bottom:12px}
+.card-wrap{perspective:1200px; cursor:pointer}
+.card{
+  width:100%; height:750px; position:relative; transform-style:preserve-3d;
+  transition:transform .55s ease;
+}
+.card.flipped{transform:rotateY(180deg)}
+.face{
+  position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  border-radius:24px; background:white; box-shadow:0 12px 35px rgba(30,60,100,.15);
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:32px 36px; border:1px solid #e6eaf0; overflow:hidden;
+}
+.back{transform:rotateY(180deg)}
+
+.card-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.context-title {
+  font-weight: bold;
+  margin-bottom: 20px;
+  font-size: 22px;
+  color: #2c3e50;
+  line-height: 1.5;
+  border-bottom: 2px solid #edf2f7;
+  padding-bottom: 12px;
+}
+.dialogue-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.dialogue-table td {
+  vertical-align: top;
+  padding: 10px 0;
+}
+.speaker-col {
+  width: 140px;
+  color: #000000;
+  font-weight: bold;
+  font-size: 24px;
+  white-space: nowrap;
+}
+.speaker-col-front {
+  width: 140px;
+  color: #718096;
+  font-weight: bold;
+  font-size: 40.5px;
+  white-space: nowrap;
+}
+.speech-col {
+  color: #e53e3e;
+  font-weight: bold;
+  font-size: 40.5px;
+  line-height: 1.5;
+}
+.speech-col-back {
+  color: #e53e3e;
+  font-weight: bold;
+  font-size: 27px;
+  line-height: 1.5;
+}
+.pinyin-block {
+  color: #718096;
+  font-weight: bold;
+  font-size: 22px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  display: block;
+}
+.meaning-text {
+  font-size: 21px;
+  color: #4b5563;
+  font-weight: normal;
+  margin-top: 4px;
+}
+
+.audio-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 22px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  vertical-align: middle;
+}
+.audio-btn:hover {
+  background-color: #edf2f7;
+}
+
+.hint{color:#888; font-size:18px; text-align:center; margin-top:14px}
+.controls{display:flex;gap:16px;justify-content:center;margin-top:22px}
+button{
+  border:0;border-radius:14px;padding:16px 26px;font-size:20px;
+  cursor:pointer;background:#e9eef7;color:#233044;
+}
+button.primary{background:#2563eb;color:white}
+button:hover{filter:brightness(.97)}
+.extra{display:flex;justify-content:center;gap:10px;margin-top:14px}
+.shuffle{background:#e9f8ef}
+
+@media(max-width:600px){
+ .app{padding-top:16px}.card{height:780px}
+ .face{padding:22px 20px}
+ .context-title{font-size:18px; margin-bottom:14px}
+ .speaker-col{width:100px; font-size:18px}
+ .speaker-col-front{width:100px; font-size:30px}
+ .speech-col{font-size:30px}
+ .speech-col-back{font-size:20px}
+ .pinyin-block{font-size:17px;}
+ .meaning-text{font-size:16px}
+ .controls button{padding:12px 16px; font-size:16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🇨🇳 BÀI 10 - BÀI KHÓA</h1>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="card-wrap" id="cardWrap" onclick="flipCard()">
+    <div class="card" id="card">
+      <div class="face front">
+        <div class="card-content" id="frontContent"></div>
+      </div>
+      <div class="face back">
+        <div class="card-content" id="backContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="event.stopPropagation();prevCard()">← Trước</button>
+    <button class="primary" onclick="event.stopPropagation();flipCard()">Lật thẻ</button>
+    <button onclick="event.stopPropagation();nextCard()">Tiếp →</button>
+  </div>
+  <div class="extra">
+    <button class="shuffle" onclick="event.stopPropagation();shuffleCards()">🔀 Trộn thẻ</button>
+  </div>
+</div>
+
+<script>
+const originalCards = [
+  {
+    "frontContext": "BÀI KHÓA 1: Vợ bắt chồng giảm cân",
+    "frontLines": [
+      { "speaker": "爱人:", "speech": "瞧你现在胖得！连鞋带都要我帮你系。无论如何，你得减肥！" },
+      { "speaker": "老董:", "speech": "是啊，是啊！可像我这样的人怎么减肥都没用。" },
+      { "speaker": "爱人:", "speech": "那也得想办法减。如果不减肥，你会得很多病的。" },
+      { "speaker": "老董:", "speech": "你看这广告！“减肥灵”，新产品。要不，我试试？" },
+      { "speaker": "爱人:", "speech": "我看哪，这些药都没什么用。" },
+      { "speaker": "老董:", "speech": "你说得太绝对了吧？" },
+      { "speaker": "爱人:", "speech": "那你说为什么现在的胖子一天比一天多？" },
+      { "speaker": "老董:", "speech": "既然吃药也没用，那就算了。" },
+      { "speaker": "爱人:", "speech": "不行。从明天起，不许你坐电梯了，每天爬楼梯！" }
+    ],
+    "backLines": [
+      { "speaker": "爱人:", "speech": "瞧你现在胖得！连鞋带都要我帮你系。无论如何，你得减肥！", "pinyin": "Qiáo nǐ xiànzài pàng de! Lián xiédài dōu yào wǒ bāng nǐ jì. Wúlùn rúhé, nǐ děi jiǎnféi!", "meaning": "Nhìn xem bây giờ anh béo thế nào! Ngay cả dây giày cũng phải để em buộc giúp anh. Dù thế nào đi nữa, anh phải giảm cân!" },
+      { "speaker": "老董:", "speech": "是啊，是啊！可像我这样的人怎么减肥都没用。", "pinyin": "Shì a, shì a! Kě xiàng wǒ zhèyàng de rén zěnme jiǎnféi dōu méiyòng.", "meaning": "Đúng vậy, đúng vậy! Nhưng người như anh dù có giảm cân thế nào cũng vô ích." },
+      { "speaker": "爱人:", "speech": "那也得想办法减。如果不减肥，你会得很多病的。", "pinyin": "Nà yě děi xiǎng bànfǎ jiǎn. Rúguǒ bù jiǎnféi, nǐ huì dé hěn duō bìng de.", "meaning": "Vậy cũng phải nghĩ cách giảm. Nếu không giảm cân, anh sẽ mắc rất nhiều bệnh." },
+      { "speaker": "老董:", "speech": "你看这广告！“减肥灵”，新产品。要不，我试试？", "pinyin": "Nǐ kàn zhè guǎnggào! “Jiǎnféi líng”, xīn chǎnpǐn. Yàobù, wǒ shìshi?", "meaning": "Em xem quảng cáo này! “Giảm cân linh”, sản phẩm mới. Hay là, anh thử xem?" },
+      { "speaker": "爱人:", "speech": "我看哪，这些药都没什么用。", "pinyin": "Wǒ kàn na, zhèxiē yào dōu méi shénme yòng.", "meaning": "Theo em thấy, những loại thuốc này đều chẳng có tác dụng gì." },
+      { "speaker": "老董:", "speech": "你说得太绝对了吧？", "pinyin": "Nǐ shuō de tài juéduì le ba?", "meaning": "Em vơ đũa cả nắm quá rồi đấy!" },
+      { "speaker": "爱人:", "speech": "那你说为什么现在的胖子一天比一天多？", "pinyin": "Nà nǐ shuō wèishénme xiànzài de pàngzi yī tiān bǐ yī tiān duō?", "meaning": "Vậy theo anh tại sao người béo bây giờ ngày một nhiều hơn?" },
+      { "speaker": "老董:", "speech": "既然吃药也没用，那就算了。", "pinyin": "Jìrán chī yào yě méiyòng, nà jiù suàn le.", "meaning": "Đã uống thuốc cũng vô ích, vậy thì thôi bỏ đi." },
+      { "speaker": "爱人:", "speech": "不行。从明天起，不许你坐电梯了，每天爬楼梯！", "pinyin": "Bùxíng. Cóng míngtiān qǐ, bù xǔ nǐ zuò diàntī le, měitiān pá lóutī!", "meaning": "Không được. Từ ngày mai trở đi, không cho phép anh đi thang máy nữa, mỗi ngày phải leo cầu thang!" }
+    ]
+  },
+  {
+    "frontContext": "BÀI KHÓA 2: Leo cầu thang giảm cân, gặp hàng xóm",
+    "frontLines": [
+      { "speaker": "老王:", "speech": "这不是老董吗？怎么，电梯坏了？" },
+      { "speaker": "老董:", "speech": "不是，我现在开始减肥了。来，抽支烟。" },
+      { "speaker": "老王:", "speech": "不不不。万一让我爱人知道了，就麻烦了。" },
+      { "speaker": "老董:", "speech": "你怎么成了“妻管严”了？" },
+      { "speaker": "老王:", "speech": "你别说了，你天天爬楼梯减肥，肯定也是你爱人的主意。" },
+      { "speaker": "老董:", "speech": "这谁都知道，她是为我好，怕我得病。" },
+      { "speaker": "老王:", "speech": "我爱人也是一样啊！我得回去了，你慢慢儿爬吧。" },
+      { "speaker": "老董:", "speech": "累死我了，我得先抽一支，歇一会儿。" }
+    ],
+    "backLines": [
+      { "speaker": "老王:", "speech": "这不是老董吗？怎么，电梯坏了？", "pinyin": "Zhè bù shì Lǎo Dǒng ma? Zěnme, diàntī huài le?", "meaning": "Đây không phải là lão Đổng sao? Sao thế, thang máy hỏng à?" },
+      { "speaker": "老董:", "speech": "不是，我现在开始减肥了。来，抽支烟。", "pinyin": "Bùshì, wǒ xiànzài kāishǐ jiǎnféi le. Lái, chōu zhī yān.", "meaning": "Không phải, bây giờ tôi bắt đầu giảm cân rồi. Nào, hút điếu thuốc." },
+      { "speaker": "老王:", "speech": "不不不。万一让我爱人知道了，就麻烦了。", "pinyin": "Bù bù bù. Wànyī ràng wǒ àiren zhīdào le, jiù máfan le.", "meaning": "Không không không. Lỡ để vợ tôi biết được, thì rắc rối lắm." },
+      { "speaker": "老董:", "speech": "你怎么成了“妻管严”了？", "pinyin": "Nǐ zěnme chéng le “qīguǎnyán” le?", "meaning": "Sao anh lại biến thành “sợ vợ” rồi?" },
+      { "speaker": "老王:", "speech": "你别说了，你天天爬楼梯减肥，肯定也是你爱人的主意。", "pinyin": "Nǐ bié shuō le, nǐ tiāntiān pá lóutī jiǎnféi, kěndìng yě shì nǐ àiren de zhǔyi.", "meaning": "Anh đừng nói nữa, anh ngày ngày leo cầu thang giảm cân, chắc chắn cũng là ý của vợ anh." },
+      { "speaker": "老董:", "speech": "这谁都知道，她是为我好，怕我得病。", "pinyin": "Zhè shuí dōu zhīdào, tā shì wèi wǒ hǎo, pà wǒ dé bìng.", "meaning": "Điều này ai cũng biết, cô ấy là vì tốt cho tôi, sợ tôi mắc bệnh." },
+      { "speaker": "老王:", "speech": "我爱人也是一样啊！我得回去了，你慢慢儿爬吧。", "pinyin": "Wǒ àiren yě shì yīyàng a! Wǒ děi huíqù le, nǐ mànmanr pá ba.", "meaning": "Vợ tôi cũng như vậy mà! Tôi phải về rồi, anh từ từ leo nhé." },
+      { "speaker": "老董:", "speech": "累死我了，我得先抽一支，歇一会儿。", "pinyin": "Lèi sǐ wǒ le, wǒ děi xiān chōu yī zhī, xiē yīhuìr.", "meaning": "Mệt chết tôi rồi, tôi phải hút một điếu trước, nghỉ một lát đã." }
+    ]
+  },
+  {
+    "frontContext": "BÀI KHÓA 3: Mua máy tính cho con nhỏ và kết quả",
+    "frontLines": [
+      { "speaker": "旁白:", "speech": "小明10岁生日的时候，爸爸妈妈给他买了一台电脑。" },
+      { "speaker": "旁白:", "speech": "本来是为了帮他学习的，可没想到小明迷上了玩儿游戏，一玩儿就是好几个小时。" },
+      { "speaker": "旁白:", "speech": "爸爸妈妈说什么他都不听。" },
+      { "speaker": "旁白:", "speech": "最近的一次考试，小明的成绩下降了很多，而且他的视力也一天比一天差。" },
+      { "speaker": "旁白:", "speech": "爸爸妈妈很着急，决定不让他再玩儿了。" },
+      { "speaker": "旁白:", "speech": "不能玩儿游戏了，小明这两天急得饭也吃不香、觉也睡不好。" },
+      { "speaker": "旁白:", "speech": "看着儿子不说、不笑的样子，爸爸妈妈不知道怎么办才好。" }
+    ],
+    "backLines": [
+      { "speaker": "旁白:", "speech": "小明10岁生日的时候，爸爸妈妈给他买了一台电脑。", "pinyin": "Xiǎo Míng 10 suì shēngrì de shíhou, bàba māma gěi tā mǎi le yī tái diànnǎo.", "meaning": "Vào sinh nhật 10 tuổi của Tiểu Minh, bố mẹ đã mua cho cậu một chiếc máy tính." },
+      { "speaker": "旁白:", "speech": "本来是为了帮他学习的，可没想到小明迷上了玩儿游戏，一玩儿就是好几个小时。", "pinyin": "Běnlái shì wèile bāng tā xuéxí de, kě méi xiǎngdào Xiǎo Míng mí shàng le wánr yóuxì, yī wánr jiù shì hǎo jǐ gè xiǎoshí.", "meaning": "Vốn dĩ là để giúp cậu học tập, nhưng không ngờ Tiểu Minh lại mê chơi game, hễ chơi là mấy tiếng đồng hồ liền." },
+      { "speaker": "旁白:", "speech": "爸爸妈妈说什么他都不听。", "pinyin": "Bàba māma shuō shénme tā dōu bù tīng.", "meaning": "Bố mẹ nói gì cậu cũng không nghe." },
+      { "speaker": "旁白:", "speech": "最近的一次考试，小明的成绩下降了很多，而且他的视力也一天比一天差。", "pinyin": "Zuìjìn de yī cì kǎoshì, Xiǎo Míng de chéngjì xiàjiàng le hěn duō, érqiě tā de shìlì yě yī tiān bǐ yī tiān chà.", "meaning": "Kì thi gần đây nhất, thành tích của Tiểu Minh giảm sút rất nhiều, hơn nữa thị lực của cậu cũng ngày một kém đi." },
+      { "speaker": "旁白:", "speech": "爸爸妈妈很着急，决定不让他再玩儿了。", "pinyin": "Bàba māma hěn zháojí, juédìng bù ràng tā zài wánr le.", "meaning": "Bố mẹ rất lo lắng, quyết định không cho cậu chơi nữa." },
+      { "speaker": "旁白:", "speech": "不能玩儿游戏了，小明这两天急得饭也吃不香、觉也睡不好。", "pinyin": "Bùnéng wánr yóuxì le, Xiǎo Míng zhè liǎng tiān jí de fàn yě chī bù xiāng, jiào yě shuì bù hǎo.", "meaning": "Không được chơi game nữa, hai ngày nay Tiểu Minh sốt ruột đến mức ăn không ngon, ngủ không yên." },
+      { "speaker": "旁白:", "speech": "看着儿子不说、不笑的样子，爸爸妈妈不知道怎么办才好。", "pinyin": "Kànzhe érzi bù shuō, bù xiào de yàngzi, bàba māma bù zhīdào zěnme bàn cái hǎo.", "meaning": "Nhìn dáng vẻ không nói, không cười của con trai, bố mẹ không biết làm thế nào mới phải." }
+    ]
+  }
+];
+
+let cards = [...originalCards];
+let index = 0;
+let flipped = false;
+
+function speakText(event, text) {
+  event.stopPropagation();
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  } else {
+    alert('Trình duyệt của bạn không hỗ trợ tính năng phát âm.');
+  }
+}
+
+function render(){
+  const c = cards[index];
+  
+  let frontHtml = `<div class="context-title">${c.frontContext}</div><table class="dialogue-table">`;
+  c.frontLines.forEach(line => {
+    frontHtml += `
+      <tr>
+        <td class="speaker-col-front">${line.speaker}</td>
+        <td class="speech-col">
+          ${line.speech}
+          <button class="audio-btn" onclick="speakText(event, '${line.speech.replace(/'/g, "\\'")}')" title="Nghe phát âm">🔊</button>
+        </td>
+      </tr>`;
+  });
+  frontHtml += `</table>`;
+  document.getElementById('frontContent').innerHTML = frontHtml;
+
+  let backHtml = `<div class="context-title">${c.frontContext}</div><table class="dialogue-table">`;
+  c.backLines.forEach(line => {
+    backHtml += `
+      <tr>
+        <td class="speaker-col">${line.speaker}</td>
+        <td class="speech-col-back">
+          ${line.speech}
+          <button class="audio-btn" onclick="speakText(event, '${line.speech.replace(/'/g, "\\'")}')" title="Nghe phát âm">🔊</button>
+          <div class="pinyin-block">${line.pinyin}</div>
+          <div class="meaning-text">${line.meaning}</div>
+        </td>
+      </tr>`;
+  });
+  backHtml += `</table>`;
+  document.getElementById('backContent').innerHTML = backHtml;
+
+  document.getElementById('progress').textContent = `Thẻ ${index+1} / ${cards.length}`;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+}
+
+function flipCard(){
+  flipped = !flipped;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+}
+
+function nextCard(){
+  index = (index + 1) % cards.length;
+  flipped = false; render();
+}
+
+function prevCard(){
+  index = (index - 1 + cards.length) % cards.length;
+  flipped = false; render();
+}
+
+function shuffleCards(){
+  for(let i=cards.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [cards[i],cards[j]]=[cards[j],cards[i]];
+  }
+  index=0; flipped=false; render();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight') nextCard();
+  else if(e.key==='ArrowLeft') prevCard();
+  else if(e.key===' ' || e.key==='Enter'){
+    e.preventDefault();
+    flipCard();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
